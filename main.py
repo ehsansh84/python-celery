@@ -1,16 +1,10 @@
-# This is a sample Python script.
-
-# Press Shift+F10 to execute it or replace it with your code.
-# Press Double Shift to search everywhere for classes, files, tool windows, actions, and settings.
 from celery import Celery, chain
-# import os
 
-# TODO: Raise an error when celery app couldn't start up
 job_queue_app = Celery(
     'tasks', broker="redis://127.0.0.1:6379/0", backend="redis://127.0.0.1:6379/1")
 chain(
             job_queue_app.signature("f1", args=["ehsan"]).set(queue="f1"),
-            job_queue_app.signature("f2", args=["create"]).set(queue="f2"),
+            job_queue_app.signature("f2", args=[]).set(queue="f2"),
         ).apply_async()
 
 chain(
@@ -34,7 +28,8 @@ app.conf.task_routes = {
 @app.task(name="f1")
 def f1(name):
     print(f'Hi, {name} from f1')
-    return (f'Hi, {name}')
+    return f'Hi, {name}'
+
 
 @app.task(name="f2")
 def f2(hi):
@@ -48,14 +43,16 @@ def sum(a, b):
 
 
 @app.task(name="mul")
-def mul(pre, a, b):
+def mul(sum_output, a, b):
     print(f'Multiply of them is {a * b}')
-    return pre, a + b
+    return sum_output, a + b
 
 
 @app.task(name="report")
-def report(sum, mul):
+def report(mul_output):
+    s, m = mul_output
     s = f'''
-        Sum of two numbers: {sum}
-        Multiply of two numbers: {mul}
+        Sum of two numbers: {s}
+        Multiply of two numbers: {m}
     '''
+    print(s)
